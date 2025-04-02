@@ -1,22 +1,23 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SocialPlatforms;
 
-
+public enum ObjectState
+{
+    Default,
+    Form1,
+    Form2,
+}
 
 public class ObjectControl : MonoBehaviour
 {
-    public enum ObjectState
-    {
-        Default,
-        Form1,
-        Form2,
-    }
-
     [Header("Unit Form")]
     [SerializeField] private ObjectState state;
+    public ObjectState p_State => state;
 
     [Header("Input Action")]
     [SerializeField] private InputAction singleTapAction;
@@ -24,9 +25,20 @@ public class ObjectControl : MonoBehaviour
 
 
     [Header("Layer Mask")]
-    [SerializeField] private LayerMask touchableLayer; // 감지할 오브젝트 레이어
+    [SerializeField] private LayerMask touchableLayer;
+
+    [Header("TargetData")]
+    [SerializeField] private float range = 10f;
+    [SerializeField] private ObjectControl target;
+    [SerializeField] private Transform targetPoint;
 
     private Camera mainCamera;
+
+    public Action Form1ChangeAction;
+    public Action Form2ChangeAction;
+
+    public bool isMerge;
+    public bool isRight;
 
     private void Start()
     {
@@ -45,6 +57,8 @@ public class ObjectControl : MonoBehaviour
     private void OnDisable()
     {
         this.state = ObjectState.Default;
+        isMerge = false;
+        isRight = false;
 
         singleTapAction.performed -= _ => OnSingleTap();
         doubleTapAction.performed -= _ => OnDoubleTap();
@@ -53,11 +67,44 @@ public class ObjectControl : MonoBehaviour
         doubleTapAction.Disable();
     }
 
+    private void Update()
+    {
+        if (target.gameObject.activeInHierarchy == false || state != ObjectState.Form2)
+        {
+            isMerge = false;
+            isRight = false;
+            return;
+        }
+
+        float distance = Vector3.Distance(transform.position, target.transform.position);
+
+        if (distance <= range)
+        {
+            if (target.state != ObjectState.Form2)
+            {
+                target.ChangeState(ObjectState.Form2);
+                target.Form2ChangeAction?.Invoke();
+            }
+
+            if (transform.position.x > target.transform.position.x) isRight = true;
+            else isRight = false;
+
+            if(isRight == false)
+            {
+                target.transform.position = targetPoint.transform.position;
+            }
+
+            isMerge = true;
+        }
+        else isMerge = false;
+    }
+
     private void OnSingleTap()
     {
         if(IsTouchingObject(out GameObject hitObject))
         {
             ChangeState(ObjectState.Form1);
+            Form1ChangeAction?.Invoke();
         }
         
     }
@@ -67,6 +114,7 @@ public class ObjectControl : MonoBehaviour
         if (IsTouchingObject(out GameObject hitObject))
         {
             ChangeState(ObjectState.Form2);
+            Form2ChangeAction?.Invoke();
         }
     }
 
@@ -74,6 +122,8 @@ public class ObjectControl : MonoBehaviour
     private bool IsTouchingObject(out GameObject hitObject)
     {
         hitObject = null;
+
+        if (this.state == ObjectState.Form2) return false;
 
         Vector2 touchPosition;
         if (Touchscreen.current != null)
@@ -88,10 +138,6 @@ public class ObjectControl : MonoBehaviour
         Ray ray = mainCamera.ScreenPointToRay(touchPosition);
         RaycastHit hit;
 
-        Debug.DrawRay(ray.origin, ray.direction * 100f, Color.red, 2f); // Ray를 그려서 확인
-
-        
-
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, touchableLayer))
         {
             hitObject = hit.collider.gameObject;
@@ -102,7 +148,6 @@ public class ObjectControl : MonoBehaviour
 
     private void ChangeState(ObjectState state)
     {
-        if (this.state == ObjectState.Form2) return; 
         this.state = state;
     }
 

@@ -1,11 +1,17 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SocialPlatforms;
 
 public class Rotatable : MonoBehaviour
 {
+    [Header("Pivot")]
+    [SerializeField] private Transform pivot;
+
     [Header("Input System")]
     [SerializeField] private InputAction pressed, axis;
 
@@ -15,24 +21,41 @@ public class Rotatable : MonoBehaviour
     [Header("Inverted")]
     [SerializeField] private bool inverted;
 
-    //private Transform cam;
+    [Header("Object Controller")]
+    [SerializeField] private ObjectControl objectControl;
+
+    [Header("Layer Mask")]
+    [SerializeField] private LayerMask touchableLayer;
+
+
+    private Camera mainCamera;
     private Quaternion baseRotation;
+    private Vector3 basePosition;
     private Vector2 rotation;
     private bool isRotateAllowed;
 
     private Coroutine rotationRoutine;
+    private Coroutine rotationRoutine_Form1;
+    private Coroutine rotationRoutine_Form2;
 
 
 
     private void Awake()
     {
-        //cam = Camera.main.transform;
-        baseRotation = gameObject.transform.rotation;
-
+        mainCamera = Camera.main;
+        baseRotation = gameObject.transform.localRotation;
+        basePosition = gameObject.transform.localPosition;
     }
 
     private void OnEnable()
     {
+        transform.localRotation = baseRotation;
+        transform.localPosition = basePosition;
+        pivot.localRotation = Quaternion.Euler(0, 0f, 0f);
+
+        objectControl.Form1ChangeAction += OnForm1Change;
+        objectControl.Form2ChangeAction += OnForm2Change;
+
         pressed.performed += _ => { StartRoutine(); };
         pressed.canceled += _ => { isRotateAllowed = false; };
         axis.performed += context => { rotation = context.ReadValue<Vector2>(); };
@@ -43,9 +66,15 @@ public class Rotatable : MonoBehaviour
 
     private void OnDisable()
     {
-        if (rotationRoutine != null) StopCoroutine(rotationRoutine);
 
-        transform.rotation = baseRotation;
+        StopAllCoroutines();
+        transform.localRotation = baseRotation;
+        transform.localPosition = basePosition;
+        pivot.localRotation = Quaternion.Euler(0, 0f, 0f);
+
+
+        objectControl.Form1ChangeAction -= OnForm1Change;
+        objectControl.Form2ChangeAction -= OnForm2Change;
         pressed.performed -= _ => { StartRoutine(); };
         pressed.canceled -= _ => { isRotateAllowed = false; };
         axis.performed -= context => { rotation = context.ReadValue<Vector2>(); };
@@ -56,9 +85,36 @@ public class Rotatable : MonoBehaviour
 
     private void StartRoutine()
     {
+        if (IsTouchingObject(out GameObject hitObject) == false) return;
+
         if(rotationRoutine != null) StopCoroutine(rotationRoutine);
 
         rotationRoutine = StartCoroutine(Rotate());
+    }
+
+    private bool IsTouchingObject(out GameObject hitObject)
+    {
+        hitObject = null;
+
+        Vector2 touchPosition;
+        if (Touchscreen.current != null)
+        {
+            touchPosition = Touchscreen.current.primaryTouch.position.ReadValue();
+        }
+        else
+        {
+            touchPosition = Mouse.current.position.ReadValue();
+        }
+
+        Ray ray = mainCamera.ScreenPointToRay(touchPosition);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, touchableLayer))
+        {
+            hitObject = hit.collider.gameObject;
+            return true;
+        }
+        return false;
     }
 
     private IEnumerator Rotate()
@@ -69,27 +125,82 @@ public class Rotatable : MonoBehaviour
         {
             //로테이션 로직
             rotation *= speed;
-            transform.Rotate(Vector3.up*(inverted? 1 : -1), rotation.x, Space.Self);
 
-            // 위 아래 로테이션 로직
-            //transform.Rotate(cam.right*(inverted? -1 : 1), rotation.y, Space.Self);
+            if(objectControl.p_State == ObjectState.Default)
+            {
+                transform.Rotate(Vector3.up * (inverted ? 1 : -1), rotation.x, Space.World);
+            }
+            else if(objectControl.p_State == ObjectState.Form1)
+            {
+                transform.Rotate(Vector3.forward * (inverted? -1 : 1), rotation.x, Space.Self);
+            }
+
+
             yield return null;
         }
 
         while(!isRotateAllowed)
         {
-            transform.rotation = Quaternion.Lerp(transform.rotation, baseRotation, (speed * 5) * Time.deltaTime);
+
+            if (objectControl.p_State == ObjectState.Default)
+            {
+                transform.localRotation = Quaternion.Lerp(transform.localRotation, baseRotation, (speed * 5) * Time.deltaTime);
+            }
+            else if (objectControl.p_State == ObjectState.Form1)
+            {
+                transform.localRotation = Quaternion.Lerp(transform.localRotation, Quaternion.Euler(180, 180, 0), (speed * 5) * Time.deltaTime);
+            }
+            
             yield return null;
         }
     }
 
-    private void OnForm1_Rotation()
+    private void OnForm1Change()
     {
-       
+        if (rotationRoutine_Form1 != null) StopCoroutine(rotationRoutine_Form1);
+
+        rotationRoutine_Form1 = StartCoroutine(Form1_Rotation());
     }
 
-    private void OnForm2_Rotation()
+    private void OnForm2Change()
     {
+        if (rotationRoutine_Form2 != null) StopCoroutine(rotationRoutine_Form2);
+
+        rotationRoutine_Form2 = StartCoroutine(Form2_Rotation());
+    }
+
+
+
+    private IEnumerator Form1_Rotation()
+    {
+        while(objectControl.p_State == ObjectState.Form1)
+        {
+            transform.localRotation = Quaternion.Lerp(transform.localRotation, Quaternion.Euler(180, 180, 0), (speed * 5) * Time.deltaTime);
+            yield return null;
+        }
+
+        yield break;
+    }
+
+    private IEnumerator Form2_Rotation()
+    {
+        while (objectControl.p_State == ObjectState.Form2)
+        {
+            transform.localRotation = Quaternion.Lerp(transform.localRotation, Quaternion.Euler(180, 180, 0), (speed * 5) * Time.deltaTime);
+
+
+            if (objectControl.isMerge)
+            {
+                pivot.localRotation = Quaternion.Lerp(pivot.localRotation, Quaternion.Euler(0, 90 * (objectControl.isRight ? 1 : -1), 0), (speed * 5) * Time.deltaTime);
+            }
+            else
+            {
+                pivot.localRotation = Quaternion.Lerp(pivot.localRotation, Quaternion.Euler(0, 0, 0), (speed * 5) * Time.deltaTime);
+            }
+
+            yield return null;
+        }
+
 
     }
 }
