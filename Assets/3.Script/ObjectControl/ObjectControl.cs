@@ -14,8 +14,18 @@ public enum ObjectState
     Form3,
 }
 
+
+public enum ObjectColor
+{
+    Red,
+    Blue,
+}
+
 public class ObjectControl : MonoBehaviour
 {
+    [Header("Object Color")]
+    [SerializeField] private ObjectColor objectColor;
+
     [Header("Unit Form")]
     [SerializeField] private ObjectState state;
     public ObjectState p_State => state;
@@ -71,6 +81,11 @@ public class ObjectControl : MonoBehaviour
 
     private void OnEnable()
     {
+        if (target.gameObject.activeInHierarchy == false)
+        {
+            GameManager.Instance.OpenPopUp(objectColor == ObjectColor.Red ? true:false);
+        }
+
         singleTapAction.Enable();
         doubleTapAction.Enable();
 
@@ -80,6 +95,11 @@ public class ObjectControl : MonoBehaviour
 
     private void OnDisable()
     {
+        if (target.gameObject.activeInHierarchy == false)
+        {
+            GameManager.Instance.ResetSetting();
+        }
+
         ChangeState(ObjectState.Default);
         isMerge = false;
         isRight = false;
@@ -121,7 +141,7 @@ public class ObjectControl : MonoBehaviour
                 isMerge = true;
                 ChangeState(ObjectState.Form3);
             }
-            else if (state == ObjectState.Form3)
+            else if ((int)state >= (int)ObjectState.Form3)
             {
                 ChangeState(ObjectState.Form2);
                 isMerge = false;
@@ -191,7 +211,7 @@ public class ObjectControl : MonoBehaviour
 
         this.state = state;
 
-        Debug.Log($"Change State : {state}");
+        //Debug.Log($"Change State : {state}");
 
         switch(state)
         {
@@ -206,6 +226,10 @@ public class ObjectControl : MonoBehaviour
                 break;
 
             case ObjectState.Form2:
+
+                GameManager.Instance.ChangeSimultaneousNum(2);
+                GameManager.Instance.TrySummon(canTrySummon: false);
+
                 form3_Effect_1.SetActive(false);
                 form3_Effect_2.SetActive(false);
                 summon_CardShadow.SetActive(false);
@@ -217,6 +241,9 @@ public class ObjectControl : MonoBehaviour
                 break;
 
             case ObjectState.Form3:
+                GameManager.Instance.ChangeSimultaneousNum(3);
+                GameManager.Instance.TrySummon(canTrySummon: true);
+
                 form1_Effect.SetActive(false);
                 form2_Effect.SetActive(false);
 
@@ -245,11 +272,17 @@ public class ObjectControl : MonoBehaviour
     // Ä«µå ±ôºýÀÌ´Â ±â´É
     private void BlinkCard(bool isSummon)
     {
-        
         if (isSummon)
         {
             if (summon_CardShadow.activeInHierarchy == true)
             {
+                if(GameManager.Instance.CheckTarget())
+                {
+                    summon_CardColor.a = 0f;
+                    summon_CardRenderer.material.color = summon_CardColor;
+                    return;
+                }
+
 
                 float alphaChangeSpeed = 255.0f / summon_CycleDuration;
 

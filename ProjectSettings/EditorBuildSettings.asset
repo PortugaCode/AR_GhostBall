@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/1.Scene/Main.unity
+    path: Assets/1.Scene/AR_GhostBall_Main.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   m_configObjects:
     EasyAR.Settings: {fileID: 11400000, guid: 7b4cdec53ccc55749b4f7f1b1320f5c0, type: 2}

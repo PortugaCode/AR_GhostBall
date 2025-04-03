@@ -27,22 +27,37 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] private ImageTrackerFrameFilter imageTrackerFrameFilter;
     [SerializeField] private ImageTargetController summonTargetConroller;
-    [SerializeField] private string summon_path;
+    [SerializeField] private GameObject Target;
+
+    [Header("SimultaneousNum")]
+    [SerializeField] private int simultaneousNum_now = 1;
+
+    [Header("Panel")]
+    [SerializeField] private GameObject redPanel;
+    [SerializeField] private GameObject bluePanel;
+
 
     public void ChangeSimultaneousNum(int num)
     {
         imageTrackerFrameFilter.SimultaneousNum = num;
+
+        simultaneousNum_now = num;
     }
 
     public void TrySummon(bool canTrySummon)
     {
-        if(canTrySummon)
+        if(canTrySummon == true)
         {
-            summonTargetConroller.ImageFileSource.Path = summon_path;
+            summonTargetConroller.Tracker = imageTrackerFrameFilter;
+            return;
+        }
+        if (canTrySummon == false)
+        {
+            summonTargetConroller.Tracker = null;
             return;
         }
 
-        summonTargetConroller.ImageFileSource.Path = string.Empty;
+
     }
 
     public void OpenPopUp(bool isRed)
@@ -50,8 +65,28 @@ public class GameManager : MonoBehaviour
         if(isRed == true)
         {
             //todo
+            redPanel.SetActive(true);
             return;
         }
         //todo
+        bluePanel.SetActive(true);
+    }
+
+    public bool CheckTarget()
+    {
+        return Target.activeInHierarchy;
+    }
+
+    public void ResetSetting()
+    {
+        redPanel.SetActive(false);
+        bluePanel.SetActive(false);
+        ChangeSimultaneousNum(1);
+        TrySummon(canTrySummon: false);
+    }
+
+    public void Quit()
+    {
+        Application.Quit();
     }
 }
