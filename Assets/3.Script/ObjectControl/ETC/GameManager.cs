@@ -36,7 +36,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject redPanel;
     [SerializeField] private GameObject bluePanel;
 
-
+    // 감지 가능 오브젝트 갯수 변경 메서드
     public void ChangeSimultaneousNum(int num)
     {
         imageTrackerFrameFilter.SimultaneousNum = num;
@@ -44,6 +44,7 @@ public class GameManager : MonoBehaviour
         simultaneousNum_now = num;
     }
 
+    //소환 가능한지 여부 변경 메서드
     public void TrySummon(bool canTrySummon)
     {
         if(canTrySummon == true)
@@ -60,6 +61,7 @@ public class GameManager : MonoBehaviour
 
     }
 
+    // 색에 따른 UI 변경 메서드
     public void OpenPopUp(bool isRed)
     {
         if(isRed == true)
@@ -72,11 +74,13 @@ public class GameManager : MonoBehaviour
         bluePanel.SetActive(true);
     }
 
+    // Summon Target이 활성화 됐는지 체크하는 메서드
     public bool CheckTarget()
     {
         return Target.activeInHierarchy;
     }
 
+    // 기본 세팅
     public void ResetSetting()
     {
         redPanel.SetActive(false);

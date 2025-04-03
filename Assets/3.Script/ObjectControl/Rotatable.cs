@@ -137,13 +137,15 @@ public class Rotatable : MonoBehaviour
         return false;
     }
 
+
+    // 스와이프 제스처에 따른 로테이션 기능 메서드
     private IEnumerator Rotate()
     {
         isRotateAllowed = true;
 
         while (isRotateAllowed)
         {
-            //로테이션 로직
+            // 로테이션 로직
             rotation *= speed;
 
             if(objectControl.p_State == ObjectState.Default)
@@ -158,7 +160,7 @@ public class Rotatable : MonoBehaviour
 
             yield return null;
         }
-
+        // 터치가 끊겼을 때 원래 로테이션으로 돌아가는 로직
         while(!isRotateAllowed)
         {
 

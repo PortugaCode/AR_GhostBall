@@ -113,13 +113,16 @@ public class ObjectControl : MonoBehaviour
 
     private void Update()
     {
+        // Form3에서 부터 카드 깜빡임 연출
         BlinkCard(state == ObjectState.Form3);
 
 
+        // Form2(다른 카드를 찾는 폼)이상이라면
         if ((int)state >= (int)ObjectState.Form2)
         {
             float distance = Vector3.Distance(transform.position, target.transform.position);
 
+            // 타겟이랑 가까우면 자석처럼 붙는 로직
             if (distance <= range && target.gameObject.activeInHierarchy == true)
             {
 
@@ -141,6 +144,7 @@ public class ObjectControl : MonoBehaviour
                 isMerge = true;
                 ChangeState(ObjectState.Form3);
             }
+            // 다시 기존 Form2로 돌아가는 로직
             else if ((int)state >= (int)ObjectState.Form3)
             {
                 ChangeState(ObjectState.Form2);
@@ -157,7 +161,7 @@ public class ObjectControl : MonoBehaviour
     // 구현 메서드
     //
     //==================================================================
-
+    
     private void OnSingleTap()
     {
         if(IsTouchingObject(out GameObject hitObject))
@@ -177,7 +181,7 @@ public class ObjectControl : MonoBehaviour
         }
     }
 
-
+    // 터치 가능한 오브젝트인지 체크하는 메서드
     private bool IsTouchingObject(out GameObject hitObject)
     {
         hitObject = null;
@@ -205,6 +209,7 @@ public class ObjectControl : MonoBehaviour
         return false;
     }
 
+    // Form 변경 메서드
     private void ChangeState(ObjectState state)
     {
         if (this.state == state) return;
