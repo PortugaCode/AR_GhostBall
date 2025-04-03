@@ -83,6 +83,26 @@ public class Rotatable : MonoBehaviour
         axis.Disable();
     }
 
+    //==================================================================
+    //
+    // 구현 메서드
+    //
+    //==================================================================
+    private void OnForm1Change()
+    {
+        if (rotationRoutine_Form1 != null) StopCoroutine(rotationRoutine_Form1);
+
+        rotationRoutine_Form1 = StartCoroutine(Form1_Rotation());
+    }
+
+    private void OnForm2Change()
+    {
+        if (rotationRoutine_Form2 != null) StopCoroutine(rotationRoutine_Form2);
+
+        rotationRoutine_Form2 = StartCoroutine(Form2_Rotation());
+    }
+
+
     private void StartRoutine()
     {
         if (IsTouchingObject(out GameObject hitObject) == false) return;
@@ -155,22 +175,6 @@ public class Rotatable : MonoBehaviour
         }
     }
 
-    private void OnForm1Change()
-    {
-        if (rotationRoutine_Form1 != null) StopCoroutine(rotationRoutine_Form1);
-
-        rotationRoutine_Form1 = StartCoroutine(Form1_Rotation());
-    }
-
-    private void OnForm2Change()
-    {
-        if (rotationRoutine_Form2 != null) StopCoroutine(rotationRoutine_Form2);
-
-        rotationRoutine_Form2 = StartCoroutine(Form2_Rotation());
-    }
-
-
-
     private IEnumerator Form1_Rotation()
     {
         while(objectControl.p_State == ObjectState.Form1)
@@ -184,7 +188,7 @@ public class Rotatable : MonoBehaviour
 
     private IEnumerator Form2_Rotation()
     {
-        while (objectControl.p_State == ObjectState.Form2)
+        while (true)
         {
             transform.localRotation = Quaternion.Lerp(transform.localRotation, Quaternion.Euler(180, 180, 0), (speed * 5) * Time.deltaTime);
 
