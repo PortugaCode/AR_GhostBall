@@ -41,13 +41,19 @@ public class ObjectControl : MonoBehaviour
     [SerializeField] private GameObject cardShadow;
     [SerializeField] private Renderer cardRenderer;
     [SerializeField] private Color cardColor;
-    [SerializeField] private float cycleDuration = 10f;
-    private float timeElapsed = 0f;
+    [SerializeField] private float cycleDuration = 100f;
     private bool isIncreasing = true;
 
     [Header("Form3 Effect")]
     [SerializeField] private GameObject form3_Effect_1;
     [SerializeField] private GameObject form3_Effect_2;
+
+    [Header("Summon Card")]
+    [SerializeField] private GameObject summon_CardShadow;
+    [SerializeField] private Renderer summon_CardRenderer;
+    [SerializeField] private Color summon_CardColor;
+    [SerializeField] private float summon_CycleDuration = 500f;
+    private bool summon_isIncreasing = true;
 
     [Header("Judgment")]
     public bool isMerge;
@@ -76,7 +82,7 @@ public class ObjectControl : MonoBehaviour
     {
         ChangeState(ObjectState.Default);
         isMerge = false;
-        isRight = true;
+        isRight = false;
 
         singleTapAction.performed -= _ => OnSingleTap();
         doubleTapAction.performed -= _ => OnDoubleTap();
@@ -87,10 +93,10 @@ public class ObjectControl : MonoBehaviour
 
     private void Update()
     {
-        BlinkCard();
+        BlinkCard(state == ObjectState.Form3);
 
 
-        if((int)state >= (int)ObjectState.Form2)
+        if ((int)state >= (int)ObjectState.Form2)
         {
             float distance = Vector3.Distance(transform.position, target.transform.position);
 
@@ -115,7 +121,7 @@ public class ObjectControl : MonoBehaviour
                 isMerge = true;
                 ChangeState(ObjectState.Form3);
             }
-            else if(state == ObjectState.Form3)
+            else if (state == ObjectState.Form3)
             {
                 ChangeState(ObjectState.Form2);
                 isMerge = false;
@@ -190,6 +196,9 @@ public class ObjectControl : MonoBehaviour
         switch(state)
         {
             case ObjectState.Form1:
+                cardShadow.SetActive(false);
+                summon_CardShadow.SetActive(false);
+
                 form3_Effect_1.SetActive(false);
                 form3_Effect_2.SetActive(false);
 
@@ -199,6 +208,7 @@ public class ObjectControl : MonoBehaviour
             case ObjectState.Form2:
                 form3_Effect_1.SetActive(false);
                 form3_Effect_2.SetActive(false);
+                summon_CardShadow.SetActive(false);
 
                 form1_Effect.SetActive(true);
                 form2_Effect.SetActive(true);
@@ -214,11 +224,14 @@ public class ObjectControl : MonoBehaviour
                 {
                     form3_Effect_1.SetActive(true);
                     form3_Effect_2.SetActive(true);
+                    summon_CardShadow.SetActive(true);
                 }
                 cardShadow.SetActive(false);
                 break;
 
             case ObjectState.Default:
+                cardShadow.SetActive(false);
+                summon_CardShadow.SetActive(false);
 
                 form1_Effect.SetActive(false);
                 form2_Effect.SetActive(false);
@@ -229,36 +242,69 @@ public class ObjectControl : MonoBehaviour
         }
     }
 
-    private void BlinkCard()
+    // Ä«µå ±ôºýÀÌ´Â ±â´É
+    private void BlinkCard(bool isSummon)
     {
-        // Ä«µå ±ôºýÀÌ´Â ±â´É
-        if (cardShadow.activeInHierarchy == true)
+        
+        if (isSummon)
         {
-            timeElapsed += Time.deltaTime;
-
-            float alphaChangeSpeed = 255.0f / cycleDuration;
-
-            if (isIncreasing)
+            if (summon_CardShadow.activeInHierarchy == true)
             {
-                cardColor.a += alphaChangeSpeed * Time.deltaTime;
-                if (cardColor.a >= 1f)
-                {
-                    cardColor.a = 1f;
-                    isIncreasing = false;
-                }
-            }
-            else
-            {
-                cardColor.a -= alphaChangeSpeed * Time.deltaTime;
-                if (cardColor.a <= 0f)
-                {
-                    cardColor.a = 0f;
-                    isIncreasing = true;
-                }
-            }
 
-            cardRenderer.material.color = cardColor;
+                float alphaChangeSpeed = 255.0f / summon_CycleDuration;
+
+                if (summon_isIncreasing)
+                {
+                    summon_CardColor.a += alphaChangeSpeed * Time.deltaTime;
+                    if (summon_CardColor.a >= 1f)
+                    {
+                        summon_CardColor.a = 1f;
+                        summon_isIncreasing = false;
+                    }
+                }
+                else
+                {
+                    summon_CardColor.a -= alphaChangeSpeed * Time.deltaTime;
+                    if (summon_CardColor.a <= 0f)
+                    {
+                        summon_CardColor.a = 0f;
+                        summon_isIncreasing = true;
+                    }
+                }
+
+                summon_CardRenderer.material.color = summon_CardColor;
+            }
         }
+        else
+        {
+            if (cardShadow.activeInHierarchy == true)
+            {
+                float alphaChangeSpeed = 255.0f / cycleDuration;
+
+                if (isIncreasing)
+                {
+                    cardColor.a += alphaChangeSpeed * Time.deltaTime;
+                    if (cardColor.a >= 1f)
+                    {
+                        cardColor.a = 1f;
+                        isIncreasing = false;
+                    }
+                }
+                else
+                {
+                    cardColor.a -= alphaChangeSpeed * Time.deltaTime;
+                    if (cardColor.a <= 0f)
+                    {
+                        cardColor.a = 0f;
+                        isIncreasing = true;
+                    }
+                }
+
+                cardRenderer.material.color = cardColor;
+            }
+        }
+        
+        
     }
     
 }
